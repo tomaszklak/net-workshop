@@ -1,0 +1,76 @@
+version: '3'
+services:
+  client1:
+    container_name: client1
+    hostname: client1
+    build:
+      context: .
+    tty: true
+    networks:
+      net1:
+        ipv4_address: 192.168.57.11
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/client1_data:/shared/unique
+
+  server1:
+    container_name: server1
+    hostname: server1
+    build:
+      context: .
+    tty: true
+    networks:
+      net1:
+        ipv4_address: 192.168.57.22
+      net2:
+        ipv4_address: 192.168.58.33
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/server1_data:/shared/unique
+
+  server2:
+    container_name: server2
+    hostname: server2
+    build:
+      context: .
+    tty: true
+    networks:
+      net2:
+        ipv4_address: 192.168.58.44
+      net3:
+        ipv4_address: 192.168.59.55
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/server2_data:/shared/unique
+
+  client2:
+    container_name: client2
+    hostname: client2
+    build:
+      context: .
+    tty: true
+    networks:
+      net3:
+        ipv4_address: 192.168.59.66
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/client2_data:/shared/unique
+
+networks:
+  net1:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.57.0/24
+
+  net2:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.58.0/24
+
+  net3:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.59.0/24
