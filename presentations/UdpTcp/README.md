@@ -47,7 +47,7 @@ Easy one first!
 ## Exercise
 
 * Open wireshark
-* Put in filter for TCP
+* Put in filter for `tcp`
 * Some fields not in header marked as '[]'
 * Explain where do they come from ?
 
@@ -76,6 +76,13 @@ Easy one first!
 | **Applications**         | Ideal for applications requiring data integrity and reliability, such as web browsing, file transfers. | Suitable for real-time applications, gaming, streaming, where speed is crucial. |
 | **Examples**             | HTTP, FTP, SMTP, SSH.              | DNS, VoIP, online gaming.          |
 
+## Exercises 1
+
+* Run a xmass-scan and null-scan
+* On client1 run xmass-scan `nmap -sX -p 12345 192.168.57.21`
+* On server1 then open a port by `socat TCP4-LISTEN:12345,fork,reuseaddr EXEC:cat` and run the `nmap` command again
+* What happens ? Observe the packet on wireshark and explain
+* Repeat the exercise for null-scan by changing the flag to '-sN'. Explain.
 
 ## Flow control in TCP
 
@@ -91,8 +98,9 @@ Easy one first!
 ### Slow start
 
 * Way to estimate reciever bandwidth
-* Server side inits a Congestion Window variable
-* 
+* Server side inits a Congestion Window (cwnd) variable
+* The rate is doubled after every ACK
+* Advantages ? Disadvantages ? 
 
 ![Slow Start](slowstart.png)
 
@@ -101,16 +109,18 @@ Easy one first!
 * Originally Multiplicative Decrease and Additive Increase (AIMD) used
 * Currently Propotional Rate Reduction (PRR) is standard
 
-### Bandwidth Delay Product
 
+## Exercise 2
 
-## Exercises
-
-* xmass, nullscan
-* different MTU sizes
-* Change slow-start
 * Change congestion window
+* Run iperf3 throughput test between `server1` and `client1` for 2 minutes. Observe bandwidth.
+* Run `ip route change default via <ip> dev <IF> proto static initcwnd 10` on `server1`
+* Run `ip route show` to verify
+* Run `ip route change default via <ip> dev <IF> proto static initcwnd <your-choice-value>` on `server1`
+* What do you expect? Why? What actually happens ?
 
 ## Homework
 
+* What happens when sending packet with different MTU sizes
 * Play around with different TCP options in the kernel and explain its impact on the network
+* sysctl -a | grep tcp
