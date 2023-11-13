@@ -7,18 +7,17 @@ def bold(s,c)
 end
 
 hostname=Socket.gethostname
-p="192.168."
+p="fd00:"
 
 machines = [
-  ["client1", "#{p}57.11", "#{p}60.11"],
-  ["server1", "#{p}57.21", "#{p}58.21"],
-  ["server2", "#{p}58.22", "#{p}59.22"],
-  ["client2", "#{p}59.12", "#{p}60.12"],
-  ["client3", "#{p}60.13"],
+  ["client1_ipv6", "#{p}1::10"],
+  ["server1_ipv6", "#{p}1::20", "#{p}2::20"],
+  ["server2_ipv6", "#{p}3::30", "#{p}2::30"],
+  ["client2_ipv6", "#{p}3::40"],
 ]
 
 def reachable?(ip)
-  system 'ping', '-c', '1', '-W', '1', ip, [:out, :err] => '/dev/null'
+  system 'ping6', '-c', '1', '-W', '1', ip, [:out, :err] => '/dev/null'
 end
 
 machines.each do |l|

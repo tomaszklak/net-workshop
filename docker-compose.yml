@@ -1,99 +1,93 @@
-version: '3'
+version: '3.2'
+
 services:
-  client1:
-    container_name: client1
-    hostname: client1
+  client1_ipv6:
+    container_name: client1_ipv6
+    hostname: client1_ipv6
+    privileged: true
+    entrypoint: /shared/common/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      net1:
-        ipv4_address: 192.168.57.11
-      net4:
-        ipv4_address: 192.168.60.11
+      network1_ipv6:
+        ipv6_address: fd00:1::10
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client1_data:/shared/unique
 
-  server1:
-    container_name: server1
-    hostname: server1
+  server1_ipv6:
+    container_name: server1_ipv6
+    hostname: server1_ipv6
+    privileged: true
+    entrypoint: /shared/common/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      net1:
-        ipv4_address: 192.168.57.21
-      net2:
-        ipv4_address: 192.168.58.21
+      network1_ipv6:
+        ipv6_address: fd00:1::20
+      network2_ipv6:
+        ipv6_address: fd00:2::20
     volumes:
         - ./shared/common:/shared/common
         - ./shared/server1_data:/shared/unique
 
-  server2:
-    container_name: server2
-    hostname: server2
+  server2_ipv6:
+    container_name: server2_ipv6
+    hostname: server2_ipv6
+    privileged: true
+    entrypoint: /shared/common/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      net2:
-        ipv4_address: 192.168.58.22
-      net3:
-        ipv4_address: 192.168.59.22
+      network2_ipv6:
+        ipv6_address: fd00:2::30
+      network3_ipv6:
+        ipv6_address: fd00:3::30
     volumes:
         - ./shared/common:/shared/common
         - ./shared/server2_data:/shared/unique
 
-  client2:
-    container_name: client2
-    hostname: client2
-    build:
-      context: .
-    tty: true
-    networks:
-      net3:
-        ipv4_address: 192.168.59.12
-      net4:
-        ipv4_address: 192.168.60.12
-    volumes:
-        - ./shared/common:/shared/common
-        - ./shared/client2_data:/shared/unique
 
-  client3:
-    container_name: client3
-    hostname: client3
+  client2_ipv6:
+    container_name: client2_ipv6
+    hostname: client2_ipv6
+    privileged: true
+    entrypoint: /shared/common/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      net4:
-        ipv4_address: 192.168.60.13
+      network3_ipv6:
+        ipv6_address: fd00:3::40
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client2_data:/shared/unique
 
 networks:
-  net1:
+  network1_ipv6:
+    enable_ipv6: true
     driver: bridge
     ipam:
+      driver: default
       config:
-        - subnet: 192.168.57.0/24
+        - subnet: fd00:1::/64
 
-  net2:
+  network2_ipv6:
+    enable_ipv6: true
     driver: bridge
     ipam:
+      driver: default
       config:
-        - subnet: 192.168.58.0/24
+        - subnet: fd00:2::/64
 
-  net3:
+  network3_ipv6:
+    enable_ipv6: true
     driver: bridge
     ipam:
+      driver: default
       config:
-        - subnet: 192.168.59.0/24
+        - subnet: fd00:3::/64
 
-  net4:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.60.0/24
