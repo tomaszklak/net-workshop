@@ -3,14 +3,16 @@ services:
   client1:
     container_name: client1
     hostname: client1
+    entrypoint: /shared/unique/entrypoint.sh
+    privileged: true
     build:
       context: .
+      args:
+        IPV4_EXCERCISE: $IPV4_EXCERCISE
     tty: true
     networks:
       net1:
         ipv4_address: 192.168.57.11
-      net4:
-        ipv4_address: 192.168.60.11
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client1_data:/shared/unique
@@ -18,8 +20,12 @@ services:
   server1:
     container_name: server1
     hostname: server1
+    entrypoint: /shared/unique/entrypoint.sh
+    privileged: true
     build:
       context: .
+      args:
+        IPV4_EXCERCISE: $IPV4_EXCERCISE
     tty: true
     networks:
       net1:
@@ -33,8 +39,12 @@ services:
   server2:
     container_name: server2
     hostname: server2
+    entrypoint: /shared/unique/entrypoint.sh
+    privileged: true
     build:
       context: .
+      args:
+        IPV4_EXCERCISE: $IPV4_EXCERCISE
     tty: true
     networks:
       net2:
@@ -48,27 +58,16 @@ services:
   client2:
     container_name: client2
     hostname: client2
+    entrypoint: /shared/unique/entrypoint.sh
+    privileged: true
     build:
       context: .
+      args:
+        IPV4_EXCERCISE: $IPV4_EXCERCISE
     tty: true
     networks:
       net3:
         ipv4_address: 192.168.59.12
-      net4:
-        ipv4_address: 192.168.60.12
-    volumes:
-        - ./shared/common:/shared/common
-        - ./shared/client2_data:/shared/unique
-
-  client3:
-    container_name: client3
-    hostname: client3
-    build:
-      context: .
-    tty: true
-    networks:
-      net4:
-        ipv4_address: 192.168.60.13
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client2_data:/shared/unique
@@ -92,8 +91,3 @@ networks:
       config:
         - subnet: 192.168.59.0/24
 
-  net4:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.60.0/24
