@@ -10,10 +10,10 @@ hostname=Socket.gethostname
 p="fd00:"
 
 machines = [
-  ["client1_ipv6", "#{p}1::10"],
-  ["server1_ipv6", "#{p}1::20", "#{p}2::20"],
-  ["server2_ipv6", "#{p}3::30", "#{p}2::30"],
-  ["client2_ipv6", "#{p}3::40"],
+  ["client1", "#{p}1::10"],
+  ["server1", "#{p}1::20", "#{p}2::20"],
+  ["server2", "#{p}3::30", "#{p}2::30"],
+  ["client2", "#{p}3::40"],
 ]
 
 def reachable?(ip)

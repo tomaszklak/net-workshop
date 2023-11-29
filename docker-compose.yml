@@ -1,73 +1,77 @@
 version: '3.2'
 
 services:
-  client1_ipv6:
-    container_name: client1_ipv6
-    hostname: client1_ipv6
+  client1:
+    container_name: client1
+    hostname: client1
     privileged: true
-    entrypoint: /shared/common/entrypoint.sh
+    entrypoint: /shared/unique/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      network1_ipv6:
+      network1:
         ipv6_address: fd00:1::10
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client1_data:/shared/unique
+    environment:
+      - ESP=${ESP:-0}
 
-  server1_ipv6:
-    container_name: server1_ipv6
-    hostname: server1_ipv6
+  server1:
+    container_name: server1
+    hostname: server1
     privileged: true
-    entrypoint: /shared/common/entrypoint.sh
+    entrypoint: /shared/unique/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      network1_ipv6:
+      network1:
         ipv6_address: fd00:1::20
-      network2_ipv6:
+      network2:
         ipv6_address: fd00:2::20
     volumes:
         - ./shared/common:/shared/common
         - ./shared/server1_data:/shared/unique
 
-  server2_ipv6:
-    container_name: server2_ipv6
-    hostname: server2_ipv6
+  server2:
+    container_name: server2
+    hostname: server2
     privileged: true
-    entrypoint: /shared/common/entrypoint.sh
+    entrypoint: /shared/unique/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      network2_ipv6:
+      network2:
         ipv6_address: fd00:2::30
-      network3_ipv6:
+      network3:
         ipv6_address: fd00:3::30
     volumes:
         - ./shared/common:/shared/common
         - ./shared/server2_data:/shared/unique
 
 
-  client2_ipv6:
-    container_name: client2_ipv6
-    hostname: client2_ipv6
+  client2:
+    container_name: client2
+    hostname: client2
     privileged: true
-    entrypoint: /shared/common/entrypoint.sh
+    entrypoint: /shared/unique/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      network3_ipv6:
+      network3:
         ipv6_address: fd00:3::40
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client2_data:/shared/unique
+    environment:
+      - ESP=${ESP:-0}
 
 networks:
-  network1_ipv6:
+  network1:
     enable_ipv6: true
     driver: bridge
     ipam:
@@ -75,7 +79,7 @@ networks:
       config:
         - subnet: fd00:1::/64
 
-  network2_ipv6:
+  network2:
     enable_ipv6: true
     driver: bridge
     ipam:
@@ -83,7 +87,7 @@ networks:
       config:
         - subnet: fd00:2::/64
 
-  network3_ipv6:
+  network3:
     enable_ipv6: true
     driver: bridge
     ipam:
