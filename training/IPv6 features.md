@@ -241,6 +241,11 @@ The most interesting parts we can see here are:
 
 ##### Exercise 6
 After starting ipsec in esp mode start capturing all packets on `server1` with `tcpdump -nvX`. Send one ping with custom payload pattern from `client1` to `client2` with `ping fd00:3::40 -c 1 -p cafef00d`. Can you see the `cafef00d` pattern in the captured packets?
+##### Homework 0
+What about sending ping with scapy:
+```
+$ python3 -c "from scapy.all import send, IPv6, ICMPv6EchoRequest; send(IPv6(dst='fd00:3::40')/ICMPv6EchoRequest(data='this is just a test'))"
+```
 ##### Homework 1
 Build strongswan from source with [save-keys](https://docs.strongswan.org/docs/5.9/plugins/save-keys.html) plugin so that you can capture **and** decode esp packet.
 ##### Homework 2
