@@ -4,94 +4,45 @@ services:
   client1:
     container_name: client1
     hostname: client1
-    privileged: true
-    entrypoint: /shared/unique/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      network1:
-        ipv6_address: fd00:1::10
+      net1:
+        ipv4_address: 192.168.57.10
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client1_data:/shared/unique
-    environment:
-      - ESP=${ESP:-0}
-
-  server1:
-    container_name: server1
-    hostname: server1
-    privileged: true
-    entrypoint: /shared/unique/entrypoint.sh
-    build:
-      context: .
-    tty: true
-    networks:
-      network1:
-        ipv6_address: fd00:1::20
-      network2:
-        ipv6_address: fd00:2::20
-    volumes:
-        - ./shared/common:/shared/common
-        - ./shared/server1_data:/shared/unique
-
-  server2:
-    container_name: server2
-    hostname: server2
-    privileged: true
-    entrypoint: /shared/unique/entrypoint.sh
-    build:
-      context: .
-    tty: true
-    networks:
-      network2:
-        ipv6_address: fd00:2::30
-      network3:
-        ipv6_address: fd00:3::30
-    volumes:
-        - ./shared/common:/shared/common
-        - ./shared/server2_data:/shared/unique
-
 
   client2:
     container_name: client2
     hostname: client2
-    privileged: true
-    entrypoint: /shared/unique/entrypoint.sh
     build:
       context: .
     tty: true
     networks:
-      network3:
-        ipv6_address: fd00:3::40
+      net1:
+        ipv4_address: 192.168.57.20
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client2_data:/shared/unique
-    environment:
-      - ESP=${ESP:-0}
+
+  client3:
+    container_name: client3
+    hostname: client3
+    build:
+      context: .
+    tty: true
+    networks:
+      net1:
+        ipv4_address: 192.168.57.30
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/client3_data:/shared/unique
 
 networks:
-  network1:
-    enable_ipv6: true
+  net1:
     driver: bridge
     ipam:
-      driver: default
       config:
-        - subnet: fd00:1::/64
-
-  network2:
-    enable_ipv6: true
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: fd00:2::/64
-
-  network3:
-    enable_ipv6: true
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: fd00:3::/64
-
+        - subnet: 192.168.57.0/24
