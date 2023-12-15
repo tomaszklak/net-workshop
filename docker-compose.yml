@@ -1,8 +1,8 @@
 version: '3'
 services:
-  client1:
-    container_name: client1
-    hostname: client1
+  router1:
+    container_name: router1
+    hostname: router1
     build:
       context: .
     tty: true
@@ -13,65 +13,67 @@ services:
         ipv4_address: 192.168.60.11
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/client1_data:/shared/unique
+        - ./shared/router1_data:/shared/unique
 
-  server1:
-    container_name: server1
-    hostname: server1
+  router2:
+    container_name: router2
+    hostname: router2
     build:
       context: .
     tty: true
     networks:
       net1:
-        ipv4_address: 192.168.57.21
+        ipv4_address: 192.168.57.12
       net2:
-        ipv4_address: 192.168.58.21
+        ipv4_address: 192.168.58.12
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/server1_data:/shared/unique
+        - ./shared/router2_data:/shared/unique
 
-  server2:
-    container_name: server2
-    hostname: server2
+  router3:
+    container_name: router3
+    hostname: router3
     build:
       context: .
     tty: true
     networks:
       net2:
-        ipv4_address: 192.168.58.22
+        ipv4_address: 192.168.58.13
       net3:
-        ipv4_address: 192.168.59.22
+        ipv4_address: 192.168.59.13
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/server2_data:/shared/unique
+        - ./shared/router3_data:/shared/unique
 
-  client2:
-    container_name: client2
-    hostname: client2
+  router4:
+    container_name: router4
+    hostname: router4
     build:
       context: .
     tty: true
     networks:
       net3:
-        ipv4_address: 192.168.59.12
+        ipv4_address: 192.168.59.14
       net4:
-        ipv4_address: 192.168.60.12
+        ipv4_address: 192.168.60.14
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/client2_data:/shared/unique
+        - ./shared/router4_data:/shared/unique
 
-  client3:
-    container_name: client3
-    hostname: client3
+  router5:
+    container_name: router5
+    hostname: router5
     build:
       context: .
     tty: true
     networks:
-      net4:
-        ipv4_address: 192.168.60.13
+      net3:
+        ipv4_address: 192.168.59.15
+      net5:
+        ipv4_address: 192.168.61.15
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/client2_data:/shared/unique
+        - ./shared/router5_data:/shared/unique
 
 networks:
   net1:
@@ -97,3 +99,9 @@ networks:
     ipam:
       config:
         - subnet: 192.168.60.0/24
+
+  net5:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.61.0/24
