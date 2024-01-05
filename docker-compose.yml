@@ -1,5 +1,16 @@
 version: '3'
 services:
+  client1:
+    container_name: client1
+    hostname: client1
+    build:
+      context: .
+    tty: true
+    privileged: true
+    networks:
+      asn4:
+        ipv4_address: 4.0.0.2
+
   router1:
     container_name: router1
     hostname: router1
@@ -7,14 +18,16 @@ services:
       context: .
     tty: true
     privileged: true
+    entrypoint: /shared/common/router_entry.sh
     networks:
-      net1:
-        ipv4_address: 192.168.57.11
-      net4:
-        ipv4_address: 192.168.60.11
+      asn4:
+        ipv4_address: 4.0.0.254
+      r1_isp1:
+        ipv4_address: 192.168.4.2
+      r1_r2:
+        ipv4_address: 192.168.3.2
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/router1_data:/shared/unique
 
   router2:
     container_name: router2
@@ -23,90 +36,211 @@ services:
       context: .
     tty: true
     privileged: true
+    entrypoint: /shared/common/router_entry.sh
     networks:
-      net1:
-        ipv4_address: 192.168.57.12
-      net2:
-        ipv4_address: 192.168.58.12
+      r1_r2:
+        ipv4_address: 192.168.3.3
+      r2_isp2:
+        ipv4_address: 192.168.5.2
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/router2_data:/shared/unique
 
-  router3:
-    container_name: router3
-    hostname: router3
+  isp1:
+    container_name: isp1
+    hostname: isp1
     build:
       context: .
     tty: true
     privileged: true
+    entrypoint: /shared/common/isp_entry.sh
     networks:
-      net2:
-        ipv4_address: 192.168.58.13
-      net3:
-        ipv4_address: 192.168.59.13
+      asn1_0:
+        ipv4_address: 1.0.0.254
+      asn1_1:
+        ipv4_address: 1.0.1.254
+      r1_isp1:
+        ipv4_address: 192.168.4.3
+      isp1_isp2:
+        ipv4_address: 192.168.1.2
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/router3_data:/shared/unique
+        - ./shared/isp1_data:/shared/unique
 
-  router4:
-    container_name: router4
-    hostname: router4
+  isp2:
+    container_name: isp2
+    hostname: isp2
     build:
       context: .
     tty: true
     privileged: true
+    entrypoint: /shared/common/isp_entry.sh
     networks:
-      net3:
-        ipv4_address: 192.168.59.14
-      net4:
-        ipv4_address: 192.168.60.14
+      asn2:
+        ipv4_address: 2.0.0.254
+      isp1_isp2:
+        ipv4_address: 192.168.1.3
+      r2_isp2:
+        ipv4_address: 192.168.5.3
+      isp2_isp3:
+        ipv4_address: 192.168.2.2
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/router4_data:/shared/unique
+        - ./shared/isp2_data:/shared/unique
 
-  router5:
-    container_name: router5
-    hostname: router5
+  isp3:
+    container_name: isp3
+    hostname: isp3
     build:
       context: .
     tty: true
     privileged: true
+    entrypoint: /shared/common/isp_entry.sh
     networks:
-      net3:
-        ipv4_address: 192.168.59.15
-      net5:
-        ipv4_address: 192.168.61.15
+      asn3:
+        ipv4_address: 3.0.0.254
+      isp2_isp3:
+        ipv4_address: 192.168.2.3
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/router5_data:/shared/unique
+        - ./shared/isp3_data:/shared/unique
+
+  internet_client1:
+    container_name: internet_client1
+    hostname: internet_client1
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/unique/entrypoint.sh
+    networks:
+      asn1_1:
+        ipv4_address: 1.0.1.2
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/ic1_data:/shared/unique
+
+  internet_client2:
+    container_name: internet_client2
+    hostname: internet_client2
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/unique/entrypoint.sh
+    networks:
+      asn1_0:
+        ipv4_address: 1.0.0.2
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/ic2_data:/shared/unique
+
+  internet_client3:
+    container_name: internet_client3
+    hostname: internet_client3
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/unique/entrypoint.sh
+    networks:
+      asn2:
+        ipv4_address: 2.0.0.2
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/ic3_data:/shared/unique
+
+  internet_client4:
+    container_name: internet_client4
+    hostname: internet_client4
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/unique/entrypoint.sh
+    networks:
+      asn3:
+        ipv4_address: 3.0.0.2
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/ic4_data:/shared/unique
 
 networks:
-  net1:
+  asn1_0:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
     ipam:
       config:
-        - subnet: 192.168.57.0/24
+        - subnet: 1.0.0.0/24
 
-  net2:
+  asn1_1:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
     ipam:
       config:
-        - subnet: 192.168.58.0/24
+        - subnet: 1.0.1.0/24
 
-  net3:
+  asn2:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
     ipam:
       config:
-        - subnet: 192.168.59.0/24
+        - subnet: 2.0.0.0/24
 
-  net4:
+  asn3:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
     ipam:
       config:
-        - subnet: 192.168.60.0/24
+        - subnet: 3.0.0.0/24
 
-  net5:
+  asn4:
     driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
     ipam:
       config:
-        - subnet: 192.168.61.0/24
+        - subnet: 4.0.0.0/24
+
+  isp1_isp2:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24
+
+  isp2_isp3:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    ipam:
+      config:
+        - subnet: 192.168.2.0/24
+
+  r1_r2:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    ipam:
+      config:
+        - subnet: 192.168.3.0/24
+
+  r1_isp1:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    ipam:
+      config:
+        - subnet: 192.168.4.0/24
+
+  r2_isp2:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    ipam:
+      config:
+        - subnet: 192.168.5.0/24

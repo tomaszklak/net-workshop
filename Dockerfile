@@ -1,5 +1,5 @@
 FROM ubuntu:22.04
 
-RUN apt update && apt install -y ruby iputils-ping net-tools nmap curl tcpdump iproute2 socat iperf3 iptables frr nano
+RUN apt update && apt install -y ruby iputils-ping net-tools nmap curl tcpdump iproute2 socat iperf3 iptables frr nano traceroute vim
 
-ENV PATH="$PATH::/usr/lib/frr/"
+ENV PATH="$PATH:/usr/lib/frr/"
