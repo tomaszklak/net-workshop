@@ -1,77 +1,84 @@
 version: '3'
 services:
-  client1:
-    container_name: client1
-    hostname: client1
+  node1:
+    container_name: node1
+    hostname: node1
     build:
       context: .
     tty: true
     networks:
       net1:
         ipv4_address: 192.168.57.11
-      net4:
-        ipv4_address: 192.168.60.11
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/client1_data:/shared/unique
 
-  server1:
-    container_name: server1
-    hostname: server1
+  node2:
+    container_name: node2
+    hostname: node2
     build:
       context: .
     tty: true
     networks:
       net1:
-        ipv4_address: 192.168.57.21
+        ipv4_address: 192.168.57.12
       net2:
-        ipv4_address: 192.168.58.21
+        ipv4_address: 192.168.58.12
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/server1_data:/shared/unique
 
-  server2:
-    container_name: server2
-    hostname: server2
+  node3:
+    container_name: node3
+    hostname: node3
     build:
       context: .
     tty: true
     networks:
       net2:
-        ipv4_address: 192.168.58.22
+        ipv4_address: 192.168.58.13
       net3:
-        ipv4_address: 192.168.59.22
+        ipv4_address: 192.168.59.13
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/server2_data:/shared/unique
 
-  client2:
-    container_name: client2
-    hostname: client2
+  node4:
+    container_name: node4
+    hostname: node4
     build:
       context: .
     tty: true
     networks:
       net3:
-        ipv4_address: 192.168.59.12
+        ipv4_address: 192.168.59.14
       net4:
-        ipv4_address: 192.168.60.12
+        ipv4_address: 192.168.60.14
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/client2_data:/shared/unique
 
-  client3:
-    container_name: client3
-    hostname: client3
+  node5:
+    container_name: node5
+    hostname: node5
     build:
       context: .
     tty: true
     networks:
       net4:
-        ipv4_address: 192.168.60.13
+        ipv4_address: 192.168.60.15
+      net5:
+        ipv4_address: 192.168.61.15
     volumes:
         - ./shared/common:/shared/common
-        - ./shared/client2_data:/shared/unique
+
+  node6:
+    container_name: node6
+    hostname: node6
+    build:
+      context: .
+    tty: true
+    networks:
+      net5:
+        ipv4_address: 192.168.61.16
+    volumes:
+        - ./shared/common:/shared/common
 
 networks:
   net1:
@@ -97,3 +104,9 @@ networks:
     ipam:
       config:
         - subnet: 192.168.60.0/24
+
+  net5:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.61.0/24
