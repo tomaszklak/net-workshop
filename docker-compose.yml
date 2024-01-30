@@ -164,6 +164,71 @@ services:
         - ./shared/common:/shared/common
         - ./shared/ic4_data:/shared/unique
 
+  nat1:
+    container_name: nat1
+    hostname: nat1
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/nat/nat_entrypoint.sh
+    networks:
+      asn1_0:
+        ipv4_address: 1.0.0.10
+      local_network1:
+        ipv4_address: 192.168.6.254
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/nat:/shared/nat
+
+  local_client1:
+    container_name: local_client1
+    hostname: local_client1
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/local/local_entrypoint.sh
+    networks:
+      local_network1:
+        ipv4_address: 192.168.6.3
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/local:/shared/local
+
+  nat2:
+    container_name: nat2
+    hostname: nat2
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/nat/nat_entrypoint.sh
+    networks:
+      asn2:
+        ipv4_address: 2.0.0.10
+      local_network2:
+        ipv4_address: 192.168.7.254
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/nat:/shared/nat
+
+  local_client2:
+    container_name: local_client2
+    hostname: local_client2
+    build:
+      context: .
+    tty: true
+    privileged: true
+    entrypoint: /shared/local/local_entrypoint.sh
+    networks:
+      local_network2:
+        ipv4_address: 192.168.7.2
+    volumes:
+        - ./shared/common:/shared/common
+        - ./shared/local:/shared/local
+
+
 networks:
   asn1_0:
     driver: bridge
@@ -244,3 +309,20 @@ networks:
     ipam:
       config:
         - subnet: 192.168.5.0/24
+
+  local_network1:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    ipam:
+      config:
+        - subnet: 192.168.6.0/24
+
+  local_network2:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: 'false'
+    ipam:
+      config:
+        - subnet: 192.168.7.0/24
+
