@@ -1,68 +1,62 @@
 Here's the setup for today's training:
-![alt text](./setup.png)
-
-We are a mid-sized company with multiple servers makred on the drawing as clinet1...clientN.
-We have an allocated ASN number 4 and a pool of IP addresses 4.0.0.0/24.
-We want to setup our infrastructure in a way that our servers are accessible from the internet.
-The end users on the internet are marked as internet_clinet1..internet_clinet4.
-The whole Internet in our example is made of 3 ISPs: ISP1, ISP2 and ISP3 which have their own ASNs and IP pools. ASN1, ASN2, ASN3 and 1.0.0.0/16, 2.0.0.0/16, 3.0.0.0/16 respectively.
-
-At the very beginning let's investigate how the current connections work. Let's log into isp1's router and check the routing table, RIB table and BGP configuration.
-To enter router's shell use:
 ```
-vtysh
+(192.168.0.10) client1 -----            ----- server1 (1.1.0.10)
+                            \          /
+                             \        /
+          (192.168.0.254) eth0 router eth1 (1.1.0.254)
+                             /        \
+                            /          \
+(192.168.0.20) client2 -----            ----- server2 (1.1.0.20)
 ```
-To see BGP config use:
-```
-show running-config
-```
-To print RIB use:
-```
-show bgp all
-```
-To see BGP summary use:
-```
-show bgp summary
-```
-Try to ping internet_clinet4 from internet_clinet1. Does it work? Why?
 
+1. Login into client1 and ping google's dns (8.8.8.8) and invalid IP (e.g. 0.1.2.3). Right after that look at contrack entries. What do the tuples look like?
 
-Now is the time to connect our servers to the internet. In order to do that we first need to talk to ISP1 to configure BGP peering with them. Also we should let them now that we have our own IP pool that we're going to advertise. They will setup their router and add policies to accept and propagate our advertisements. This part is already done. The ips1 router is configured and expects our peering. Let's coufigure our router1 in order to establish the peering. We need to add a new BGP neighbor and advertise our IP pool. Let's do it:
-```
-vtysh
-configure
-router bgp 4
- bgp router-id 4.0.0.0
- no bgp ebgp-requires-policy
- neighbor 192.168.4.3 remote-as 1
- address-family ipv4 unicast
-  network 4.0.0.0/24
- exit-address-family
-exit
-```
-Now let's log into client1, set router1 as default gateway and try to ping internet_clinet4.
-Let's take a look at the configuration of router1.
+2. From clinet1 `curl 1.1.0.10`. In the second terminal login into the router container. Look at contrack entries. What do the tuples look like?
+   server1 cannot respond to client1. It has a private IP. We need to setup NAT on the router. Let's try adding that.
+   Now that we have NAT setup, let's try the curl again. What do the contrack entries look like now?
+   Helper questions:
+      It is a common situation we have at home. Our devices have private IPs and we want to access the internet. What NAT should be used? SNAT or DNAT?
+      What is the difference between SNAT and MASQUERADE? Can MASQUERADE be used here?
 
-Now we figure out that it would be good to have some redundancy in our setup.
-Let's add another router to our network and configure it to peer with IPS2.
-This way our servers have two paths to the internet.
-Let's configure router2 to peer with ISP2 via eBGP and our router1 via iBGP.
-Do not add any networks to advertise to this router.
+3. Now let's try to look at the packets traveling through the router's forward chain. We can use the following command:
+   `iptables -t filter -A FORWARD -j NFQUEUE --queue-num 2`
+   Now try to curl. Does it work? It shouldn't. That is because we are sending all packets to the queue but noone is processing them. Let's try to process them with:
+   `python3 logger.py`
+   Now try to curl again. What do you see in the logger? What do you see in the contrack entries? Does that make sense?
 
-What is the route from client1 to internet_clinet3? Why?
-What does traceroute show?
-What is the route the other way around? Why?
+4. Now let's try to also monitor the packets going through the router's POSTROUTING chain. We can use the following command:
+   `iptables -t nat -F POSTROUTING`
+   `iptables -t nat -A POSTROUTING -o eth0 -m mark --mark 0 -j NFQUEUE --queue-num 1`
+   `iptables -t nat -A POSTROUTING -o eth0 -m mark --mark 1 -j MASQUERADE`
+   Now try to curl again. What do you see in the logger?
+   Now let's talk a little bit about the magic with the marks and about the logger.py script.
 
-Let's try to fix it together. We need to set next-hop-self on router1 and router2.
+5. To not have those messing with our tests lets flush the POSTROUTING chain in the nat table and FORWARD chain in the filter table.
+   `iptables -t filter -F FORWARD`
+   `iptables -t nat -F POSTROUTING`
+   `iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE`
 
-What is the route from client1 to internet_clinet3 now? Why?
-What does traceroute show?
+6. We have decided to run the local http server on client2. It listens on port 1234. We want to access it from the outside.
+   Let's setup the router to forward the packets from port 88 to client2's port 1234.
 
-Now let's log into isp1 router and put down the link between isp1 and isp2. What happens to the traffic?
-Why? Is it good or bad? Why? How to avoid it?
-
-Now let's log into isp1 router and put the link between isp1 and isp2 back up. Fix the problem and put the link down again. Did the situation improve?
-Hint: we need to setup some export policies on our routers. prefix-list and route-map are your friends.
+7. We currently have a problem with our router. It does not have firewall enabled. We allow all the packets to flow through the FORWARD chain. We need to fix that.
+   Try to curl from server2 this address: 192.168.0.10:666. We don't want it to work.
+   We need to allow the packets to flow through the FORWARD chain only if they are related to the established connections or if they are destined to the client2's port 1234.
+      - First let's try to set the default policy to DROP.
+      - Now we let's allow for NEW connections only from the inside to the outside. It does not work. Why?
+      - Let's allow the packets related to the established connections to flow through the FORWARD chain.
+      - We still have a problem. We need to allow the packets destined to the client2's port 1234 to flow through the FORWARD chain. Let's fix thix.
 
 Homework:
-Try to create a policy using local-preference to change routing configuration
+Debugging iptables can done with TRACE target. Unfortunatelly it will not work in a docker. Try to create a rule with -j TRACE target on your host machine and see the kernel logs.
+You should see how the packet traverses the iptables rules.
+Append this rule to the RAW chain.
+
+
+HINTS IN RANDOM ORDER:
+`iptables -t filter -A FORWARD -m conntrack --ctstate ESTABLISHED -j ACCEPT`
+`iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE`
+`iptables -t filter -A FORWARD -i eth1 -m conntrack --ctstate NEW -j ACCEPT`
+`iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 88 -j DNAT --to-destination 192.168.0.20:1234`
+`iptables -t filter -A FORWARD -d 192.168.0.20 -p tcp -m tcp --dport 1234 -j ACCEPT`
+`iptables -t filter -P FORWARD DROP`
