@@ -9,8 +9,8 @@ services:
     networks:
       net1:
         ipv4_address: 192.168.57.11
-      net4:
-        ipv4_address: 192.168.60.11
+      net3:
+        ipv4_address: 192.168.59.11
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client1_data:/shared/unique
@@ -30,21 +30,6 @@ services:
         - ./shared/common:/shared/common
         - ./shared/server1_data:/shared/unique
 
-  server2:
-    container_name: server2
-    hostname: server2
-    build:
-      context: .
-    tty: true
-    networks:
-      net2:
-        ipv4_address: 192.168.58.22
-      net3:
-        ipv4_address: 192.168.59.22
-    volumes:
-        - ./shared/common:/shared/common
-        - ./shared/server2_data:/shared/unique
-
   client2:
     container_name: client2
     hostname: client2
@@ -52,23 +37,10 @@ services:
       context: .
     tty: true
     networks:
+      net2:
+        ipv4_address: 192.168.58.31
       net3:
-        ipv4_address: 192.168.59.12
-      net4:
-        ipv4_address: 192.168.60.12
-    volumes:
-        - ./shared/common:/shared/common
-        - ./shared/client2_data:/shared/unique
-
-  client3:
-    container_name: client3
-    hostname: client3
-    build:
-      context: .
-    tty: true
-    networks:
-      net4:
-        ipv4_address: 192.168.60.13
+        ipv4_address: 192.168.59.31
     volumes:
         - ./shared/common:/shared/common
         - ./shared/client2_data:/shared/unique
@@ -92,8 +64,3 @@ networks:
       config:
         - subnet: 192.168.59.0/24
 
-  net4:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.168.60.0/24
