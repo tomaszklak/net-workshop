@@ -1,0 +1,252 @@
+# Introduction
+In a nutshell, a name resolution service translates between human-readable domain names or hostnames and IP addresses, or between IP addresses and MAC addresses.
+
+IPs are hard to remember, and IPv6 and MAC addresses are even harder to remember. And there's a lot of them, making it almost impossible to deal with those addresses directly, at scale.
+
+We need some kind of service to facilitate the identification and location of network resources such as websites, services, and devices. 
+
+# Different protocols
+## NetBIOS (Network Basic Input/Output System):    
+NetBIOS is a legacy name resolution protocol that works in a local area networks to allow devices to communicate over said network.
+
+Exists on layer 5 (the session layer) in the OSI model, abstracting the network layer from applications
+
+Before TCP/IP became widespread, NetBIOS allowed computers to talk over LAN without requiring extensive configuration. As TCP/IP became more widespread, NetBIOS was more and more replaced by DNS and other IP-based alternatives. NetBIOS has since been adapted to allow NetBIOS to work over IP instead of LAN communication
+
+Microsoft has started phasing out use of NetBIOS in favor of mDNS [source](https://techcommunity.microsoft.com/t5/networking-blog/aligning-on-mdns-ramping-down-netbios-name-resolution-and-llmnr/ba-p/3290816)
+
+### WINS (Windows Internet Name Service)
+Windows Internet Name Service (WINS) is a legacy computer name registration and resolution service that maps computer NetBIOS names to IP addresses. - [Microsoft](https://learn.microsoft.com/en-us/windows-server/networking/technologies/wins/wins-top)
+
+Windows Internet Name Service (WINS) provides a dynamic replicated database service that can register and resolve NetBIOS names to IP addresses that are used on your network. The WINS service on Windows Server 2012 enables a server to act as a NetBIOS name server that registers and resolves names for WINS-enabled client computers on your network as described in the NetBIOS over TCP/IP standards. - [Microsoft](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-R2-and-2012/hh831671(v=ws.11))
+
+## LLMNR (Link-Local Multicast Name Resolution)
+The goal of Link-Local Multicast Name Resolution (LLMNR) is to enable name resolution in scenarios in which conventional DNS name resolution is not possible.  LLMNR supports all current and future DNS formats, types, and classes, while operating on a separate port from DNS, and with a distinct resolver cache. Since LLMNR only operates on the local link, it cannot be considered a substitute for DNS. - [Microsoft](https://www.microsoft.com/en-us/research/publication/link-local-multicast-name-resolution-llmnr/)
+
+Microsoft has started phasing out use of LLMNR in favor of mDNS [source](https://techcommunity.microsoft.com/t5/networking-blog/aligning-on-mdns-ramping-down-netbios-name-resolution-and-llmnr/ba-p/3290816)
+
+## NIS (Network Information Service)
+NIS, originally known as YP (Yellow Pages), is a distributed directory service used in Unix and Linux environments for centralized management of network configuration files, including hostnames, user accounts, and passwords. It provides a mechanism for name resolution and other network-related information retrieval.
+
+Has since mostly been replaced by DNS for the hostname lookup and LDAP for the rest of the directory information
+
+## ARP (Address Resolution Protocol)
+A lot of, maybe most, network communication today happens over IP, but IP needs physical addresses to work, so we need some way to do that translation.
+
+ARP sends a broadcast to FF:FF:FF:FF:FF, which is accepted by all devices on the local network, asking for the MAC address associated with an IP address.
+
+There are different kinds of ARP requests, one example is reverse ARP, which devices can use when they join a network to get assigned an IP address.
+
+### Exercise
+
+We can see what is in the ARP cache by either running `arp` or `cat /proc/net/arp`. The arp command has some useful optoins, like `-n` to not resolve hostnames or `-i <iname>` to only see ARP entries for a single interface.
+
+1. Check what is in the ARP cache in client1.
+
+2. Start tcpdump on client1 with `tcpdump -ni any arp` so we can see ARP requests being made.
+
+3. In a separate terminal session, run the following commands on client1, checking tcpdump and the ARP entries between each command
+
+```
+ping 192.168.57.21
+ping 192.168.57.22
+ping 192.168.60.12
+ping google.com
+```
+
+What can you see?
+
+
+## DNS
+DNS's primary function is translating human-readable to machine-friendly addresses, but it's also a global directory for other important services.
+
+DNS is a massive database made up of delegations, in a tree-structure, that contains DNS zones. At the top of the tree is the DNS root zone, and below that are the TLDs.
+
+A DNS query will go through different delegations in a recursive manner until it finds the correct record, and then returns that.
+
+DNS registrars and TLDs are overseen by ICANN (Internet Corporation for Names And Numbers), making sure all registrars and TLDs have good security, customer service, and aren't abusing the DNS system.
+
+A DNS request usually looks like (example, for `wikipedia.org`):
+1. A request is made from the user's machine to a recursive DNS server (can be set up by ISP, or one that is set by the user like `1.1.1.1`)
+2. That recursive server sends the request to one of the root servers of the internet
+3. The root returns a delegation for `.org`
+4. The recursive server make a request to the authoritative DNS server for the `.org` TLD
+5. The `.org` server provides a delegation for `wikipedia.org` 
+6. That recursive server makes a request to the authoritative DNS server of `wikipedia.org`
+7. The DNS server of `wikipedia.org` responds with the IP address of `wikipedia.org`
+8. The recursive server returns the IP to the user
+
+![alt text](images/dns-request.png)
+
+However, the DNS servers also have a cache with previous requests, and will often be able to provide the requested IP directly without having to go through the above flow, potentially speeding up DNS queries.
+
+An **authoritative** DNS server generally only answer DNS queries for the zone(s) they are authoritative for while a **recursive** DNS server can answer any DNS request for any zone. The recursive server, like we saw above, works in a recursive manner, starting at a root server and then working it's way through delegations until it gets it's response.
+
+There are currently 13 root servers, and all recursive DNS servers are pre-configured with the IPs of those root servers. Each root is managed by a different company, all overseen by ICANN. Why 13? Originally, DNS messages had to fit in 512 bytes, which is enough space for 13 NS records and one A record. These days, DNS queries can return a few thousand records.
+
+DNS queries are made over UDP, mostly to port 53.
+
+### DNS request
+![alt text](images/dns-query.png)
+
+### DNS response
+![alt text](images/dns-response.png)
+
+### DNS zones
+A zone represents a portion of the DNS namespace and is managed as a unit, by a single organization.
+
+The most well known zones are the root zones and the TLDs, but pretty much every company with some kind of internet presence has a zone. For example, there is an individual zone for `nordvpn.com`.
+
+Each zone owns its name and the children of that name. For example, the zone for `google.com` also owns `maps.google.com` and `mail.google.com`, and the zone for `.com` owns all of those, and any domain using the `.com` TLD. The zone for `google.com` "starts with" `google.com`. A zone ends with either a leaf node or a delegation. For example, there might be a delegation for `maps.google.com`, where the authoritative server for `google.com` can no longer resolve IPs and instead delegates to the zone for that URL.
+
+At the start of each zone is a record called SOA, Start Of Authority, that contains metadata about the zone.
+
+![alt text](images/zone-tree.png)
+
+We can find the authoritative nameservers for a zone by getting the NS records for that zone. A DNS server will respond with a set of NS records to signal that there is a delegate that manages a zone.
+
+### DNS record types
+
+**SOA**: Start of authority record. Contains serial number, refresh time, retry time, expire time, and "minimum TTL". All of these values have to do with zone transfers, except the minimum TTL which has to do with negative caching.
+
+**NS**: Nameserver record. Contains an authoritative DNS server for a zone, and a TTL value.
+
+**A**: IPv4 record. Contains a single IPv4 address, and a TTL value.
+
+**AAAA**: IPv6 record. Contains a single IPv4 address, and a TTL value.
+
+**MX**: Mail exchange record. Contains a preference value and DNS name for the mail exchange of the domain, and a TTL value. The DNS of the mail exchange must directly map to an A or AAAA record.
+
+**CNAME**: Canonical name record: Contains the canonical name for the domain, which is used to alias or redirect a DNS name.
+
+**TXT**: Descriptive text record: originally meant to hold human-readable information about the domain/zone. Has since expanded to include many kinds of application-specific information.
+
+### Security and privacy
+
+**DNS over TLS (DoT)** adds TLS encryption on top of UDP for DNS communication. Uses port 853.
+
+**DNS over HTTPS (DoH)** sends DNS requests over HTTPS instead of UDP, accomplishing the same end-result as DoT, but with different tradeoffs. Uses port 443, like all other HTTPS traffic.
+
+**DNSSEC** is a set of security extensions for verifying the identity of DNS root servers and authoritative nameservers in communications with DNS resolvers.
+
+### Exercise 1 - host
+
+We're going to run a series of DNS requests to get a sense of what the responses look like. First with the tool `host`.
+
+First, let's run some DNS queries with the default DNS server:
+
+```
+host google.com
+host -t A google.com
+host -t AAAA google.com
+host -t MX google.com
+host -t NS google.com
+host -t SOA google.com
+```
+
+What information can you see in the output?
+
+Next, let's run the same queries, but with specifying a DNS server to use, in this case `1.1.1.1`:
+
+```
+host google.com 1.1.1.1
+host -t A google.com 1.1.1.1
+host -t AAAA google.com 1.1.1.1
+host -t MX google.com 1.1.1.1
+host -t NS google.com 1.1.1.1
+```
+
+What changed?
+
+We can also run reverse lookup, with the default DNS server or by specifying one:
+
+```
+host 192.168.57.21
+host 192.168.57.21 1.1.1.1
+host 8.8.8.8
+host 8.8.8.8 1.1.1.1
+```
+
+What were you results, and why?
+
+We can also get the list of root DNS servers by running `host -t NS .`, with `.` being the hostname of the root servers. We can then look up the IP of a root server with `host <hostname of root server>`, for example `host c.root-servers.net 1.1.1.1` 
+
+### Exercise 2 - nslookup
+
+Another tool we can use on linux is `nslookup`. It provides the same information, but has different options. 
+
+`nslookup` can be run either in interactive mode by just running `nslookup`, or `nslookup - <DNS server to use>`, or non-interactive by adding the information you want to query, like `nslookup google.com`. 
+
+Run some of the same queries from the `host` exercises in both interactive and non-interactive mode to see how the output differs. Note: with `host`, we specified the type of record we wanted with `-t <record type>`. In `nslookup`, we instead use `-type=<record type>`.
+
+### Exercise 3 - dig
+The final tool we're going to look at is `dig`, which again provides the same information but in a different way. The simplest query looks much like for the other tools: `dig google.com`, but becomes more different for other queries. To do reverse lookup we need to use the `-x` flag: `dig -x 8.8.8.8`, when specifying a DNS server to use it looks like this: `dig google.com @1.1.1.1`, and if we want to ask for a specific record type we can do it like this: `dig A google.com`
+
+Run some of the same queries we've run before to see how the output changes.
+
+### Exercise 4 - change DNS server
+
+So far when making queries to a different DNS server, we've specified it in the command, but we can change what DNS server is used by default. The changes we are making here are temporary, but it can be done permanently as well.
+
+Edit `/etc/resolv.conf` to comment out the existing `nameserver` and add a new one pointing to `1.1.1.1`. Now run some of the DNS queries again.
+
+Did you notice before that the DNS server being used is shown in the output of the different commands?
+
+## `/etc/hosts`
+In the old days, `/etc/hosts` was used on unix-based systems for name resolution, but over time it has been replaced by other methods, like DNS.
+
+It still has valid uses though
+- It can be used to block certain websites by mapping the hostname to a different IP, like localhost
+- Redirect websites by mapping the hostname you want to redirect to the IP of the site you want to redirect to, you can also create shorthands this way, by for example mapping nord.com to the ip of nordvpn.com
+- Can be used as a backup if DNS is broken
+- Can act as a local DNS server, if you want to give hostnames to local devices
+
+### Exercise
+
+1. Let's inspect hosts file with `cat /etc/hosts`. What entries are there already? We can see that the format of the entries is `<ip address> <hostname>`.
+
+2. We could see before that there are entries to resolve `client1` in the hosts file. Docker compose will setup so we can resolve the other container names as well, like `server1`, but we can create a shorthand. Add an entry to the hosts file so that it resolves `s1` to the IP of server1 and then ping it to make sure it works.
+
+3. Let's remap a domain with the hosts file. First, ping `google.com` and check what IP address it actually pings. Next, add an entry to the hosts file, remapping `google.com` to `127.0.0.1`. Ping `google.com` again. Which IP is it pinging?
+
+
+## mDNS (Multicast DNS)
+mDNS is a decentralized name resolution protocol used for resolving hostnames to IP addresses in small local networks. It operates without the need for a centralized DNS server and relies on multicast communication to discover and resolve hostnames dynamically.
+
+It's a zero-configuration network protocol that, like the name implies, uses multicast. mDNS works on port 5252 with the IP addresses 224.0.0.251 or ff02::fb.
+
+mDNS uses the same message format as DNS, but with small changes. Both the request and response formats use one bit of an existing field for other purposes. In mDNS requests, that bit indicates if the response should be sent as unicast or multicast. In mDNS responses, that bit specifies if the neighboring nodes should overwrite or append to existing entries.
+
+Unless the aforementioned bit is set in the request, all mDNS traffic goes over multicast, so all mDNS devices in the network can listen to and upate their mappings when other nodes request information.
+
+By default, mDNS will only resolve hostnames ending with the `.local` TLD. mDNS only works for devices that implement mDNS and cannot identify any other devices. In such cases, alternative solutions need to be used. If a device no longer has a hostname, it can, optionally, send a response packet with a TTL value of 0.
+
+mDNS is implemented in, among other things, Apple's Bonjour and the open-source avahi programs. The windows 10 implementation initally only allowed to discover networked printers, but was later expanded to resolve hostnames as well
+
+### Exercise
+
+Open two terminal sessions on `client1`. In the first one, run `tcpdump -X -v -ni any`, and in the second one, run `mdns-scan`. Can you see the mDNS requests?
+
+## SSDP (Simple Service Discovery Protocol)
+
+### UPnP (Universal Plug and Play)
+UPnP is a zero-configuration network technology to let devices in a network seamlessly discover each other. UPnP assumes the network is using IP, and then uses HTTP on top of that.
+
+A UPnP-compatible device from any vendor can dynamically join a network, obtain an IP address, announce its name, advertise or convey its capabilities upon request, and learn about the presence and capabilities of other devices.
+
+Devices make a search requests with HTTP on UDP using Multicast (HTTPMU) and responses are made With HTTP on UDP using Unicast (HTTPU).
+
+### SSDP
+SSDP is a network protocol used for service discovery and advertisement in UPnP (Universal Plug and Play) networks. While not primarily a name resolution protocol, SSDP allows devices to discover and communicate with each other by resolving service names to IP addresses dynamically.
+
+SSDP uses port 1900 on the following IP addresses for multicast:
+
+- 239.255.255.250 (IPv4 site-local address)
+- ff02::c (IPv6 [link-local](https://en.wikipedia.org/wiki/Link-local_address "Link-local address"))
+- ff05::c (IPv6 site-local)
+
+SSDP uses the HTTP method _NOTIFY_ to announce the establishment or withdrawal of services (presence) information to the multicast group. A client that wishes to discover available services on a network, uses method _M-SEARCH_. Responses to such search requests are sent via unicast addressing to the originating address and port number of the multicast request. NOTIFY and M-SEARCH are defined by SSDP
+
+### Exercise
+
+Open two terminal sessions on `client1`. In the first one, run `tcpdump -X -v -ni any`, and in the second one, run `gssdp-discover`. Can you see the SSDP requests?
